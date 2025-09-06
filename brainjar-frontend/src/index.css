@@ -1,0 +1,106 @@
+/* CSS Variables for Light and Dark themes */
+:root {
+  /* Light theme colors */
+  --bg-light: #ffffff;
+  --bg-secondary-light: #f8f9fa;
+  --text-light: #1a1a1a;
+  --text-secondary-light: #6c757d;
+  --primary-light: #007bff;
+  --border-light: #dee2e6;
+  --card-light: #ffffff;
+  --shadow-light: rgba(0, 0, 0, 0.1);
+  --hover-light: #f8f9fa;
+  
+  /* Dark theme colors */
+  --bg-dark: #121212;
+  --bg-secondary-dark: #1e1e1e;
+  --text-dark: #f1f1f1;
+  --text-secondary-dark: #b3b3b3;
+  --primary-dark: #4dabf7;
+  --border-dark: #404040;
+  --card-dark: #1e1e1e;
+  --shadow-dark: rgba(0, 0, 0, 0.3);
+  --hover-dark: #2a2a2a;
+  
+  /* Transition settings */
+  --theme-transition: all 0.3s ease;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: var(--theme-transition);
+}
+
+/* Light theme styles */
+body.light {
+  background-color: var(--bg-light);
+  color: var(--text-light);
+}
+
+/* Dark theme styles */
+body.dark {
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+/* Apply theme variables to common elements */
+body.light {
+  --bg-primary: var(--bg-light);
+  --bg-secondary: var(--bg-secondary-light);
+  --text-primary: var(--text-light);
+  --text-secondary: var(--text-secondary-light);
+  --primary-color: var(--primary-light);
+  --border-color: var(--border-light);
+  --card-bg: var(--card-light);
+  --shadow-color: var(--shadow-light);
+  --hover-bg: var(--hover-light);
+}
+
+body.dark {
+  --bg-primary: var(--bg-dark);
+  --bg-secondary: var(--bg-secondary-dark);
+  --text-primary: var(--text-dark);
+  --text-secondary: var(--text-secondary-dark);
+  --primary-color: var(--primary-dark);
+  --border-color: var(--border-dark);
+  --card-bg: var(--card-dark);
+  --shadow-color: var(--shadow-dark);
+  --hover-bg: var(--hover-dark);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Scrollbar theming */
+body.light ::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.light ::-webkit-scrollbar-track {
+  background: var(--bg-secondary-light);
+}
+
+body.light ::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 4px;
+}
+
+body.dark ::-webkit-scrollbar {
+  width: 8px;
+}
+
+body.dark ::-webkit-scrollbar-track {
+  background: var(--bg-secondary-dark);
+}
+
+body.dark ::-webkit-scrollbar-thumb {
+  background: var(--border-dark);
+  border-radius: 4px;
+}
