@@ -8,7 +8,6 @@ import Register from './components/Register';
 import Problems from './components/Problems';
 import Friends from './components/Friends';
 import Chat from './components/Chat';
-import Leaderboard from './components/Leaderboard';
 import Profile from './components/Profile';
 import Navbar from './components/Navbar';
 
@@ -67,7 +66,6 @@ function App() {
               <Route path="/problems" element={<Problems user={user} />} />
               <Route path="/friends" element={<Friends user={user} />} />
               <Route path="/chat" element={<Chat user={user} />} />
-              <Route path="/leaderboard" element={<Leaderboard user={user} />} />
               <Route path="/profile" element={<Profile user={user} />} />
               <Route path="*" element={<Navigate to="/dashboard" />} />
             </Routes>

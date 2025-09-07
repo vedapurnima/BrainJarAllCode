@@ -308,7 +308,6 @@
 
 .feedback-btn,
 .rate-btn,
-.resources-btn,
 .edit-btn {
   background: white;
   border: 2px solid #e2e8f0;
@@ -317,7 +316,6 @@
 
 .feedback-btn:hover,
 .rate-btn:hover,
-.resources-btn:hover,
 .edit-btn:hover {
   background: #f8fafc;
   border-color: #cbd5e0;

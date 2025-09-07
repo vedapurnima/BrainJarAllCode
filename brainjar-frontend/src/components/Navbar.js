@@ -53,14 +53,6 @@ const Navbar = ({ user, onLogout }) => {
           </Link>
           
           <Link 
-            to="/leaderboard" 
-            className={`nav-link ${isActive('/leaderboard')}`}
-          >
-            <span className="nav-icon">🏆</span>
-            Leaderboard
-          </Link>
-          
-          <Link 
             to="/profile" 
             className={`nav-link ${isActive('/profile')}`}
           >

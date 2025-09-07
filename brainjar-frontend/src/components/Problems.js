@@ -363,10 +363,6 @@ const Problems = ({ user }) => {
                       <span className="btn-icon">⭐</span>
                       Rate
                     </button>
-                    <button className="action-btn resources-btn">
-                      <span className="btn-icon">📖</span>
-                      Resources
-                    </button>
                   </div>
                 </div>
               );
