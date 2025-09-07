@@ -2,6 +2,41 @@
   padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
+  position: relative;
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  z-index: 1000;
+  animation: slideIn 0.3s ease-out;
+}
+
+.notification-success {
+  background: linear-gradient(135deg, #38a169, #68d391);
+  color: white;
+  box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+}
+
+.notification-error {
+  background: linear-gradient(135deg, #e53e3e, #fc8181);
+  color: white;
+  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .friends-header {
@@ -395,6 +430,110 @@
 .chat-btn:hover {
   background: linear-gradient(135deg, #2b77c7, #4299e1);
   transform: translateY(-1px);
+}
+
+/* Dark mode styles */
+.friends-container.dark {
+  background-color: #1a202c;
+  color: #e2e8f0;
+}
+
+.friends-container.dark .friends-title {
+  color: #f7fafc;
+}
+
+.friends-container.dark .friends-subtitle {
+  color: #a0aec0;
+}
+
+.friends-container.dark .friends-tabs {
+  border-bottom-color: #4a5568;
+}
+
+.friends-container.dark .friends-tab {
+  color: #a0aec0;
+}
+
+.friends-container.dark .friends-tab:hover {
+  color: #e2e8f0;
+  background: rgba(226, 232, 240, 0.05);
+}
+
+.friends-container.dark .friends-tab.active {
+  color: #63b3ed;
+}
+
+.friends-container.dark .search-input {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.friends-container.dark .search-input:focus {
+  border-color: #63b3ed;
+  box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+}
+
+.friends-container.dark .search-input::placeholder {
+  color: #718096;
+}
+
+.friends-container.dark .empty-state {
+  background: #2d3748;
+  border: 1px solid #4a5568;
+}
+
+.friends-container.dark .empty-state-title {
+  color: #e2e8f0;
+}
+
+.friends-container.dark .empty-state-description {
+  color: #a0aec0;
+}
+
+.friends-container.dark .user-card,
+.friends-container.dark .friend-card {
+  background: #2d3748;
+  border-color: #4a5568;
+  color: #e2e8f0;
+}
+
+.friends-container.dark .user-card:hover,
+.friends-container.dark .friend-card:hover {
+  background: #374151;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+}
+
+.friends-container.dark .user-info h3,
+.friends-container.dark .friend-info h3 {
+  color: #f7fafc;
+}
+
+.friends-container.dark .user-email,
+.friends-container.dark .friend-email {
+  color: #a0aec0;
+}
+
+.friends-container.dark .stat-item {
+  color: #a0aec0;
+}
+
+.friends-container.dark .error-message {
+  background: #fed7d7;
+  border-color: #feb2b2;
+  color: #c53030;
+}
+
+.friends-container.dark .loading-spinner {
+  color: #a0aec0;
+}
+
+.friends-container.dark .online-indicator span {
+  color: #a0aec0;
+}
+
+.friends-container.dark .request-timestamp {
+  color: #718096;
 }
 
 /* Mobile responsiveness */

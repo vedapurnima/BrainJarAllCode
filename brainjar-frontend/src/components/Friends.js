@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useTheme } from '../context/ThemeContext';
 import './Friends.css';
 
 const Friends = ({ user }) => {
   const navigate = useNavigate();
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState('suggestions');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [notification, setNotification] = useState(null);
   
   // Data states
   const [suggestions, setSuggestions] = useState([]);
@@ -16,15 +19,31 @@ const Friends = ({ user }) => {
   const [myFriends, setMyFriends] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
 
+  // Show notification
+  const showNotification = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
   // Fetch data on component mount
   useEffect(() => {
-    fetchAllData();
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchAllData();
+    } else {
+      setError('Please log in to view friends.');
+      setLoading(false);
+    }
   }, []);
 
   // Search functionality
   useEffect(() => {
     if (searchTerm.trim() && activeTab === 'suggestions') {
-      searchUsers();
+      const timeoutId = setTimeout(() => {
+        searchUsers();
+      }, 500); // Debounce search
+      
+      return () => clearTimeout(timeoutId);
     } else if (!searchTerm.trim() && activeTab === 'suggestions') {
       fetchSuggestions();
     }
@@ -50,7 +69,7 @@ const Friends = ({ user }) => {
       setMyFriends(friendsRes.data.friends || []);
     } catch (err) {
       console.error('Error fetching friends data:', err);
-      setError('Failed to load friends data');
+      setError('Failed to load friends data. Please make sure you are logged in.');
     } finally {
       setLoading(false);
     }
@@ -93,28 +112,35 @@ const Friends = ({ user }) => {
       
       // Refresh suggestions to remove the user we sent request to
       fetchSuggestions();
-      alert('Friend request sent successfully!');
+      showNotification('Friend request sent successfully!');
     } catch (err) {
       console.error('Error sending friend request:', err);
-      alert('Failed to send friend request');
+      if (err.response?.data?.error) {
+        showNotification(err.response.data.error, 'error');
+      } else {
+        showNotification('Failed to send friend request', 'error');
+      }
     }
   };
 
   const respondToRequest = async (requestId, action) => {
     try {
       const token = localStorage.getItem('token');
-      const endpoint = action === 'accept' ? 'accept' : 'reject';
       
-      await axios.post(`http://localhost:8080/api/friend-request/${endpoint}/${requestId}`, {}, {
+      await axios.post(`http://localhost:8080/api/friend-request/${action}/${requestId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       // Refresh all data after accepting/rejecting
       fetchAllData();
-      alert(`Friend request ${action}ed successfully!`);
+      showNotification(`Friend request ${action}ed successfully!`);
     } catch (err) {
       console.error(`Error ${action}ing friend request:`, err);
-      alert(`Failed to ${action} friend request`);
+      if (err.response?.data?.error) {
+        showNotification(err.response.data.error, 'error');
+      } else {
+        showNotification(`Failed to ${action} friend request`, 'error');
+      }
     }
   };
 
@@ -145,11 +171,11 @@ const Friends = ({ user }) => {
         <div className="user-stats">
           <div className="stat-item">
             <span className="stat-icon">🔥</span>
-            <span>{Math.floor(Math.random() * 30)} day streak</span>
+            <span>{userInfo.current_streak || 0} day streak</span>
           </div>
           <div className="stat-item">
             <span className="stat-icon">⭐</span>
-            <span>{Math.floor(Math.random() * 200)} problems</span>
+            <span>{userInfo.problems_solved || 0} problems</span>
           </div>
         </div>
 
@@ -215,11 +241,11 @@ const Friends = ({ user }) => {
       <div className="user-stats">
         <div className="stat-item">
           <span className="stat-icon">🔥</span>
-          <span>{Math.floor(Math.random() * 45)} day streak</span>
+          <span>{friend.current_streak || Math.floor(Math.random() * 45)} day streak</span>
         </div>
         <div className="stat-item">
           <span className="stat-icon">⭐</span>
-          <span>{Math.floor(Math.random() * 312)} problems</span>
+          <span>{friend.problems_solved || Math.floor(Math.random() * 312)} problems</span>
         </div>
         <div className="stat-item">
           <span className="stat-icon">👥</span>
@@ -259,7 +285,13 @@ const Friends = ({ user }) => {
   }
 
   return (
-    <div className="friends-container">
+    <div className={`friends-container ${theme}`}>
+      {notification && (
+        <div className={`notification notification-${notification.type}`}>
+          {notification.message}
+        </div>
+      )}
+      
       <div className="friends-header">
         <h1 className="friends-title">Friends</h1>
         <p className="friends-subtitle">Connect with fellow learners and grow together</p>
