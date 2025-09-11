@@ -11,16 +11,24 @@
   --shadow-light: rgba(0, 0, 0, 0.1);
   --hover-light: #f8f9fa;
   
-  /* Dark theme colors */
-  --bg-dark: #121212;
-  --bg-secondary-dark: #1e1e1e;
-  --text-dark: #f1f1f1;
-  --text-secondary-dark: #b3b3b3;
-  --primary-dark: #4dabf7;
-  --border-dark: #404040;
-  --card-dark: #1e1e1e;
-  --shadow-dark: rgba(0, 0, 0, 0.3);
-  --hover-dark: #2a2a2a;
+  /* Dark theme colors - Updated to match reference design */
+  --bg-dark: #0f172a;           /* Deep navy background */
+  --bg-secondary-dark: #1e293b; /* Slightly lighter navy */
+  --text-dark: #f1f5f9;         /* Light text */
+  --text-secondary-dark: #94a3b8; /* Muted text */
+  --primary-dark: #3b82f6;      /* Blue accent */
+  --accent-dark: #06b6d4;       /* Cyan accent */
+  --success-dark: #10b981;      /* Green accent */
+  --warning-dark: #f59e0b;      /* Orange accent */
+  --border-dark: #334155;       /* Border color */
+  --card-dark: #1e293b;         /* Card background */
+  --card-hover-dark: #2d3748;   /* Card hover background */
+  --shadow-dark: rgba(0, 0, 0, 0.4);
+  --hover-dark: #2d3748;
+  --input-dark: #334155;        /* Input background */
+  --gradient-primary: linear-gradient(135deg, #3b82f6 0%, #06b6d4 100%);
+  --gradient-secondary: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --gradient-accent: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
   
   /* Transition settings */
   --theme-transition: all 0.3s ease;
@@ -55,10 +63,15 @@ body.light {
   --text-primary: var(--text-light);
   --text-secondary: var(--text-secondary-light);
   --primary-color: var(--primary-light);
+  --accent-color: var(--primary-light);
+  --success-color: #10b981;
+  --warning-color: #f59e0b;
   --border-color: var(--border-light);
   --card-bg: var(--card-light);
+  --card-hover-bg: #f8fafc;
   --shadow-color: var(--shadow-light);
   --hover-bg: var(--hover-light);
+  --input-bg: var(--card-light);
 }
 
 body.dark {
@@ -67,10 +80,15 @@ body.dark {
   --text-primary: var(--text-dark);
   --text-secondary: var(--text-secondary-dark);
   --primary-color: var(--primary-dark);
+  --accent-color: var(--accent-dark);
+  --success-color: var(--success-dark);
+  --warning-color: var(--warning-dark);
   --border-color: var(--border-dark);
   --card-bg: var(--card-dark);
+  --card-hover-bg: var(--card-hover-dark);
   --shadow-color: var(--shadow-dark);
   --hover-bg: var(--hover-dark);
+  --input-bg: var(--input-dark);
 }
 
 code {
@@ -97,10 +115,31 @@ body.dark ::-webkit-scrollbar {
 }
 
 body.dark ::-webkit-scrollbar-track {
-  background: var(--bg-secondary-dark);
+  background: var(--bg-dark);
 }
 
 body.dark ::-webkit-scrollbar-thumb {
   background: var(--border-dark);
   border-radius: 4px;
+}
+
+body.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--primary-dark);
+}
+
+/* Enhanced dark theme body styling */
+body.dark {
+  background: var(--bg-dark);
+  color: var(--text-dark);
+}
+
+/* Selection styling for dark theme */
+body.dark ::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: var(--text-dark);
+}
+
+body.light ::selection {
+  background: rgba(59, 130, 246, 0.3);
+  color: var(--text-light);
 }

@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { submitSolution, getSolvedProblems, getProblemSolutions } from '../services/problemService';
 import './Problems.css';
 
 const Problems = ({ user }) => {
+  const [allProblems, setAllProblems] = useState([]);
   const [communityProblems, setCommunityProblems] = useState([]);
   const [myProblems, setMyProblems] = useState([]);
+  const [solvedProblems, setSolvedProblems] = useState([]);
   const [activeTab, setActiveTab] = useState('community');
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -15,87 +18,66 @@ const Problems = ({ user }) => {
     category: ''
   });
   
-  // New state for solving problems and feedback
+  // State for solving problems
   const [selectedProblem, setSelectedProblem] = useState(null);
   const [showSolveModal, setShowSolveModal] = useState(false);
-  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
-  const [showResponsesModal, setShowResponsesModal] = useState(false);
-  const [problemResponses, setProblemResponses] = useState([]);
-  const [feedback, setFeedback] = useState({
-    rating: 5,
-    feedback: '',
-    is_helpful: true
-  });
+  const [showSolutionDetailsModal, setShowSolutionDetailsModal] = useState(false);
+  const [showProblemSolutionsModal, setShowProblemSolutionsModal] = useState(false);
+  const [problemSolutions, setProblemSolutions] = useState([]);
+  const [selectedSolution, setSelectedSolution] = useState(null);
   const [solution, setSolution] = useState('');
   const [isSolving, setIsSolving] = useState(false);
-  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   useEffect(() => {
-    fetchProblems();
-  }, []);
-
-  const fetchProblems = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const headers = { Authorization: `Bearer ${token}` };
-      
-      // Fetch all problems first
-      const allProblemsResponse = await axios.get('http://localhost:8080/api/problems', { headers });
-      const allProblems = allProblemsResponse.data || [];
-      
-      // Try to fetch community problems, fallback to all problems if community endpoint doesn't exist
-      let communityData = [];
+    const token = localStorage.getItem('token');
+    const headers = { Authorization: `Bearer ${token}` };
+    const fetchCommunityProblems = async () => {
       try {
-        const communityResponse = await axios.get('http://localhost:8080/api/problems/community', { headers });
-        communityData = communityResponse.data || [];
-      } catch (communityError) {
-        console.log('Community endpoint not available, using all problems as community');
-        // Use all problems as community problems if community endpoint doesn't exist
-        communityData = allProblems;
+        const response = await axios.get('http://localhost:8080/api/problems/community', { headers });
+        setCommunityProblems(response.data);
+      } catch (error) {
+        console.error('Error fetching community problems:', error);
       }
-      
-      // Set community problems (exclude user's own problems for community view)
-      const userId = JSON.parse(localStorage.getItem('user'))?.id;
-      const filteredCommunityProblems = communityData.filter(problem => problem.user_id !== userId);
-      setCommunityProblems(sortProblems(filteredCommunityProblems, sortBy));
-      
-      // Set user's own problems
-      const userProblems = allProblems.filter(problem => problem.user_id === userId);
-      setMyProblems(sortProblems(userProblems, sortBy));
-      
-    } catch (error) {
-      console.error('Error fetching problems:', error);
-      // Set empty arrays on error
-      setCommunityProblems([]);
-      setMyProblems([]);
-    } finally {
+    };
+    const fetchMyProblems = async () => {
+      try {
+        const response = await axios.get('http://localhost:8080/api/problems', { headers });
+        setMyProblems(response.data);
+      } catch (error) {
+        console.error('Error fetching my problems:', error);
+      }
+    };
+    const fetchSolvedProblems = async () => {
+      try {
+        const solvedData = await getSolvedProblems();
+        setSolvedProblems(solvedData);
+      } catch (error) {
+        console.error('Error fetching solved problems:', error);
+      }
+    };
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([
+        fetchCommunityProblems(),
+        fetchMyProblems(),
+        fetchSolvedProblems()
+      ]);
       setLoading(false);
-    }
-  };
+    };
+    loadData();
+  }, [user]);
 
-  const sortProblems = (problems, sortType) => {
-    const sorted = [...problems];
-    switch (sortType) {
-      case 'newest':
-        return sorted.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-      case 'oldest':
-        return sorted.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-      case 'category':
-        return sorted.sort((a, b) => a.category.localeCompare(b.category));
-      case 'title':
-        return sorted.sort((a, b) => a.title.localeCompare(b.title));
-      default:
-        return sorted;
-    }
-  };
-
-  // Update sorting when sortBy changes
   useEffect(() => {
-    if (!loading) {
-      setCommunityProblems(prev => sortProblems(prev, sortBy));
-      setMyProblems(prev => sortProblems(prev, sortBy));
-    }
-  }, [sortBy, loading]);
+    if (!user || !user.id) return;
+    // Community: problems not created by current user
+    setCommunityProblems(
+      allProblems.filter(p => p.created_by !== user.id)
+    );
+    // My Problems: problems created by current user
+    setMyProblems(
+      allProblems.filter(p => p.created_by === user.id)
+    );
+  }, [allProblems, user]);
 
   const handleCreateProblem = async (e) => {
     e.preventDefault();
@@ -107,7 +89,7 @@ const Problems = ({ user }) => {
       
       setNewProblem({ title: '', description: '', category: '' });
       setShowCreateForm(false);
-      fetchProblems();
+      window.location.reload(); // Refresh to show new problem
     } catch (error) {
       console.error('Error creating problem:', error);
     }
@@ -151,63 +133,43 @@ const Problems = ({ user }) => {
     return problem.author || problem.user_name || problem.created_by || 'Anonymous';
   };
 
-  // Function to handle marking a problem as solved
-  const handleSolveProblem = async (problemId, solutionText = '') => {
+  // Function to handle solving a problem
+  const handleSolveProblem = async (problemId, solutionText) => {
+    if (!solutionText.trim()) {
+      alert('Please provide a solution before submitting.');
+      return;
+    }
+    
     setIsSolving(true);
     try {
-      const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:8080/api/problems/${problemId}/solve`, 
-        { solved: true },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await submitSolution(problemId, solutionText);
       
       setShowSolveModal(false);
       setSelectedProblem(null);
       setSolution('');
-      alert('Congratulations! Problem marked as solved! 🎉');
-      fetchProblems(); // Refresh the problems list
+      alert('Congratulations! Problem solved successfully! 🎉');
+      window.location.reload(); // Refresh to update problem status
     } catch (error) {
-      console.error('Error marking problem as solved:', error);
-      alert('Failed to mark problem as solved');
+      console.error('Error solving problem:', error);
+      if (error.message === 'You have already submitted a solution for this problem') {
+        alert('You have already submitted a solution for this problem!');
+      } else {
+        alert('Failed to submit solution. Please try again.');
+      }
     } finally {
       setIsSolving(false);
     }
   };
 
-  // Function to submit feedback for a problem
-  const handleSubmitFeedback = async (problemId) => {
-    setIsSubmittingFeedback(true);
+  // Function to fetch solutions for a problem (for problem creators)
+  const fetchProblemSolutions = async (problemId) => {
     try {
-      const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:8080/api/problems/${problemId}/feedback`, 
-        feedback,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      
-      setShowFeedbackModal(false);
-      setSelectedProblem(null);
-      setFeedback({ rating: 5, feedback: '', is_helpful: true });
-      alert('Thank you for your feedback! 👍');
+      const solutions = await getProblemSolutions(problemId);
+      setProblemSolutions(solutions);
+      setShowProblemSolutionsModal(true);
     } catch (error) {
-      console.error('Error submitting feedback:', error);
-      alert('Failed to submit feedback');
-    } finally {
-      setIsSubmittingFeedback(false);
-    }
-  };
-
-  // Function to fetch problem responses (for problem creators)
-  const fetchProblemResponses = async (problemId) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:8080/api/problems/${problemId}/responses`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setProblemResponses(response.data);
-      setShowResponsesModal(true);
-    } catch (error) {
-      console.error('Error fetching problem responses:', error);
-      alert('Failed to fetch responses');
+      console.error('Error fetching problem solutions:', error);
+      alert('Failed to fetch solutions');
     }
   };
 
@@ -217,28 +179,10 @@ const Problems = ({ user }) => {
     setShowSolveModal(true);
   };
 
-  // Function to open feedback modal  
-  const openFeedbackModal = (problem) => {
-    setSelectedProblem(problem);
-    setShowFeedbackModal(true);
-  };
-
-  // Function to render star rating
-  const renderStarRating = (rating, onRatingChange) => {
-    return (
-      <div className="star-rating">
-        {[1, 2, 3, 4, 5].map(star => (
-          <button
-            key={star}
-            type="button"
-            className={`star ${star <= rating ? 'active' : ''}`}
-            onClick={() => onRatingChange && onRatingChange(star)}
-          >
-            ⭐
-          </button>
-        ))}
-      </div>
-    );
+  // Function to view solution details
+  const viewSolutionDetails = (solution) => {
+    setSelectedSolution(solution);
+    setShowSolutionDetailsModal(true);
   };
 
   if (loading) {
@@ -280,14 +224,22 @@ const Problems = ({ user }) => {
           >
             My Problems
           </button>
+          <button 
+            className={`tab-button ${activeTab === 'solved' ? 'active' : ''}`}
+            onClick={() => setActiveTab('solved')}
+          >
+            Solved Problems
+          </button>
         </div>
         
         <div className="tab-controls">
           <div className="tab-description">
             {activeTab === 'community' ? (
               <p>Solve problems created by the community</p>
+            ) : activeTab === 'my' ? (
+              <p>Problems you've created and their solutions</p>
             ) : (
-              <p>Problems you've created and their responses</p>
+              <p>Problems you've successfully solved</p>
             )}
           </div>
           
@@ -311,111 +263,170 @@ const Problems = ({ user }) => {
       <div className="problems-content">
         {activeTab === 'community' ? (
           <div className="community-problems">
-            {communityProblems.map(problem => {
-              const difficulty = getDifficultyFromCategory(problem.category);
-              return (
-                <div key={problem.id} className="community-problem-card">
-                  <div className="problem-header">
-                    <h3 className="problem-title">{problem.title}</h3>
-                    <div 
-                      className="difficulty-badge"
-                      style={{ backgroundColor: getDifficultyColor(difficulty) }}
-                    >
-                      {difficulty}
+            {communityProblems
+              .sort((a, b) => {
+                if (sortBy === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+                if (sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
+                if (sortBy === 'title') return a.title.localeCompare(b.title);
+                if (sortBy === 'category') return a.category.localeCompare(b.category);
+                return 0;
+              })
+              .map(problem => {
+                const difficulty = getDifficultyFromCategory(problem.category);
+                return (
+                  <div key={problem.id} className="community-problem-card">
+                    <div className="problem-header">
+                      <h3 className="problem-title">{problem.title}</h3>
+                      <div 
+                        className="difficulty-badge"
+                        style={{ backgroundColor: getDifficultyColor(difficulty) }}
+                      >
+                        {difficulty}
+                      </div>
+                    </div>
+                    <p className="problem-description">{problem.description}</p>
+                    <div className="problem-meta">
+                      <div className="problem-info">
+                        <span className="problem-author">
+                          <span className="author-icon">👤</span>
+                          {getAuthorName(problem)}
+                        </span>
+                        <span className="problem-category">
+                          <span className="category-icon">📚</span>
+                          {problem.category}
+                        </span>
+                        <span className="problem-date">
+                          <span className="date-icon">📅</span>
+                          {formatDate(problem.created_at)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="problem-actions">
+                      <button 
+                        className="action-btn solve-btn"
+                        onClick={() => openSolveModal(problem)}
+                      >
+                        <span className="btn-icon">🚀</span>
+                        Solve Problem
+                      </button>
                     </div>
                   </div>
-                  
-                  <p className="problem-description">{problem.description}</p>
-                  
-                  <div className="problem-meta">
-                    <div className="problem-info">
-                      <span className="problem-author">
-                        <span className="author-icon">$</span>
-                        {getAuthorName(problem)}
-                      </span>
+                );
+              })}
+          </div>
+        ) : activeTab === 'my' ? (
+          <div className="my-problems">
+            {myProblems
+              .sort((a, b) => {
+                if (sortBy === 'newest') return new Date(b.created_at) - new Date(a.created_at);
+                if (sortBy === 'oldest') return new Date(a.created_at) - new Date(b.created_at);
+                if (sortBy === 'title') return a.title.localeCompare(b.title);
+                if (sortBy === 'category') return a.category.localeCompare(b.category);
+                return 0;
+              })
+              .map(problem => {
+                const responsesCount = problem.solutions ? problem.solutions.filter(s => s.solved_by !== user.id).length : 0;
+                const rating = problem.rating || 0;
+                return (
+                  <div key={problem.id} className="my-problem-card">
+                    <div className="problem-header">
+                      <h3 className="problem-title">{problem.title}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto' }}>
+                        <span className="responses-badge">{responsesCount} responses</span>
+                        <span className="rating-badge">⭐ {rating}</span>
+                        <button
+                          className="action-btn delete-btn"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (window.confirm('Are you sure you want to delete this problem? This action cannot be undone.')) {
+                              try {
+                                const token = localStorage.getItem('token');
+                                await axios.delete(`http://localhost:8080/api/problems/${problem.id}`, {
+                                  headers: { Authorization: `Bearer ${token}` }
+                                });
+                                setMyProblems(prev => prev.filter(p => p.id !== problem.id));
+                              } catch (error) {
+                                alert('Failed to delete problem.');
+                              }
+                            }
+                          }}
+                        >
+                          <span className="btn-icon">🗑️</span> Delete
+                        </button>
+                      </div>
+                    </div>
+                    <p className="problem-description">{problem.description}</p>
+                    <div className="problem-meta">
                       <span className="problem-category">
                         <span className="category-icon">📚</span>
                         {problem.category}
                       </span>
                       <span className="problem-date">
-                        <span className="date-icon">📅</span>
-                        {formatDate(problem.created_at)}
+                        📅 {formatDate(problem.created_at)}
+                      </span>
+                      <span className="problem-difficulty">
+                        <span className="difficulty-icon">🎯</span>
+                        {getDifficultyFromCategory(problem.category)}
                       </span>
                     </div>
+                    <div className="problem-actions">
+                      <button
+                        className="action-btn view-responses-btn"
+                        onClick={() => fetchProblemSolutions(problem.id)}
+                      >
+                        <span className="btn-icon">💬</span> View Responses ({responsesCount})
+                      </button>
+                      <button
+                        className="action-btn edit-btn"
+                        onClick={() => {/* TODO: open edit modal/form for this problem */}}
+                      >
+                        <span className="btn-icon">✏️</span> Edit Problem
+                      </button>
+                    </div>
                   </div>
-                  
-                  <div className="problem-actions">
-                    <button 
-                      className="action-btn solve-btn"
-                      onClick={() => openSolveModal(problem)}
-                    >
-                      <span className="btn-icon">▶</span>
-                      Solve
-                    </button>
-                    <button 
-                      className="action-btn feedback-btn"
-                      onClick={() => openFeedbackModal(problem)}
-                    >
-                      <span className="btn-icon">💬</span>
-                      Feedback
-                    </button>
-                    <button className="action-btn rate-btn">
-                      <span className="btn-icon">⭐</span>
-                      Rate
-                    </button>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         ) : (
-          <div className="my-problems">
-            {myProblems.map(problem => (
-              <div key={problem.id} className="my-problem-card">
-                <div className="problem-header">
-                  <h3 className="problem-title">{problem.title}</h3>
-                  <div className="problem-stats">
-                    <div className="responses-badge">
-                      0 responses
-                    </div>
-                    <div className="rating-badge">
-                      ⭐ {problem.solved ? '5.0' : 'New'}
+          <div className="solved-problems">
+            {solvedProblems
+              .sort((a, b) => {
+                if (sortBy === 'newest') return new Date(b.solved_at) - new Date(a.solved_at);
+                if (sortBy === 'oldest') return new Date(a.solved_at) - new Date(b.solved_at);
+                if (sortBy === 'title') return a.title.localeCompare(b.title);
+                if (sortBy === 'category') return a.category.localeCompare(b.category);
+                return 0;
+              })
+              .map(solved => (
+                <div key={solved.solution_id || solved.id} className="solved-problem-card">
+                  <div className="problem-header">
+                    <h3 className="problem-title">{solved.title}</h3>
+                    <div className="solved-badge">
+                      <span role="img" aria-label="Solved">✔️</span> Solved
                     </div>
                   </div>
-                </div>
-                
-                <p className="problem-description">{problem.description}</p>
-                
-                <div className="problem-meta">
-                  <span className="problem-category">
-                    <span className="category-icon">⚡</span>
-                    {problem.category}
-                  </span>
-                  <span className="problem-date">
-                    📅 {formatDate(problem.created_at)}
-                  </span>
-                  {problem.solved && (
-                    <span className="problem-status">
-                      ✅ Solved
+                  <p className="problem-description">{solved.description}</p>
+                  <div className="problem-meta">
+                    <span className="problem-category">
+                      <span className="category-icon">�</span>
+                      {solved.category}
                     </span>
-                  )}
+                    <span className="problem-date">
+                      <span className="date-icon">�</span>
+                      {formatDate(solved.created_at)}
+                    </span>
+                    <span className="problem-difficulty">
+                      <span className="difficulty-icon">🎯</span>
+                      {getDifficultyFromCategory(solved.category)}
+                    </span>
+                    <span className="solved-date">
+                      <span className="date-icon">✔️</span>
+                      Solved: {formatDate(solved.solved_at)}
+                    </span>
+                  </div>
+                  {/* Optionally show solution text or details here if needed */}
                 </div>
-                
-                <div className="problem-actions">
-                  <button 
-                    className="action-btn view-responses-btn"
-                    onClick={() => fetchProblemResponses(problem.id)}
-                  >
-                    <span className="btn-icon">💬</span>
-                    View Responses (0)
-                  </button>
-                  <button className="action-btn edit-btn">
-                    <span className="btn-icon">✏️</span>
-                    Edit Problem
-                  </button>
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
         )}
       </div>
@@ -517,14 +528,18 @@ const Problems = ({ user }) => {
               handleSolveProblem(selectedProblem.id, solution);
             }}>
               <div className="form-group">
-                <label>Your Solution (Optional):</label>
+                <label>Your Solution: *</label>
                 <textarea
                   value={solution}
                   onChange={(e) => setSolution(e.target.value)}
-                  rows="6"
-                  placeholder="Describe your approach to solving this problem..."
+                  rows="8"
+                  placeholder="Write your solution here... (code, explanation, or approach)"
                   className="solution-textarea"
+                  required
                 />
+                <div className="form-hint">
+                  Please provide your solution approach, code, or detailed explanation.
+                </div>
               </div>
               
               <div className="modal-actions">
@@ -539,9 +554,9 @@ const Problems = ({ user }) => {
                 <button 
                   type="submit" 
                   className="submit-btn solve-submit-btn"
-                  disabled={isSolving}
+                  disabled={isSolving || !solution.trim()}
                 >
-                  {isSolving ? 'Marking as Solved...' : '✓ Mark as Solved'}
+                  {isSolving ? 'Submitting Solution...' : '🎯 Submit Solution'}
                 </button>
               </div>
             </form>
@@ -549,142 +564,112 @@ const Problems = ({ user }) => {
         </div>
       )}
 
-      {/* Feedback Modal */}
-      {showFeedbackModal && selectedProblem && (
-        <div className="modal-overlay" onClick={() => setShowFeedbackModal(false)}>
-          <div className="modal-content feedback-modal" onClick={(e) => e.stopPropagation()}>
+
+
+      {/* Solution Details Modal */}
+      {showSolutionDetailsModal && selectedSolution && (
+        <div className="modal-overlay" onClick={() => setShowSolutionDetailsModal(false)}>
+          <div className="modal-content solution-details-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Provide Feedback</h2>
+              <h2>Your Solution: {selectedSolution.title}</h2>
               <button 
                 className="close-btn"
-                onClick={() => setShowFeedbackModal(false)}
+                onClick={() => setShowSolutionDetailsModal(false)}
               >
                 ×
               </button>
             </div>
             
-            <div className="problem-summary">
-              <h4>{selectedProblem.title}</h4>
-              <p>By: {getAuthorName(selectedProblem)}</p>
-            </div>
-            
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              handleSubmitFeedback(selectedProblem.id);
-            }}>
-              <div className="form-group">
-                <label>Rating:</label>
-                <div className="rating-section">
-                  {renderStarRating(feedback.rating, (rating) => 
-                    setFeedback({...feedback, rating})
-                  )}
-                  <span className="rating-text">({feedback.rating}/5 stars)</span>
+            <div className="solution-details">
+              <div className="solution-meta">
+                <div className="solution-info">
+                  <span className="solved-date">
+                    <span className="date-icon">🎯</span>
+                    Solved on: {formatDate(selectedSolution.solved_at)}
+                  </span>
+                  <span className="problem-category">
+                    <span className="category-icon">📚</span>
+                    Category: {selectedSolution.category}
+                  </span>
+                  <span className="problem-creator">
+                    <span className="author-icon">👤</span>
+                    Created by: {selectedSolution.problem_creator_username}
+                  </span>
                 </div>
               </div>
               
-              <div className="form-group">
-                <label>Feedback (Optional):</label>
-                <textarea
-                  value={feedback.feedback}
-                  onChange={(e) => setFeedback({...feedback, feedback: e.target.value})}
-                  rows="4"
-                  placeholder="Share your thoughts about this problem..."
-                  className="feedback-textarea"
-                />
+              <div className="problem-description-section">
+                <h4>Problem Description:</h4>
+                <p>{selectedSolution.description}</p>
               </div>
               
-              <div className="form-group checkbox-group">
-                <label className="checkbox-label">
-                  <input
-                    type="checkbox"
-                    checked={feedback.is_helpful}
-                    onChange={(e) => setFeedback({...feedback, is_helpful: e.target.checked})}
-                  />
-                  <span className="checkmark"></span>
-                  This problem was helpful
-                </label>
+              <div className="solution-section">
+                <h4>Your Solution:</h4>
+                <div className="solution-text">
+                  <pre>{selectedSolution.solution_text}</pre>
+                </div>
               </div>
-              
-              <div className="modal-actions">
-                <button 
-                  type="button" 
-                  className="cancel-btn"
-                  onClick={() => setShowFeedbackModal(false)}
-                  disabled={isSubmittingFeedback}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="submit-btn feedback-submit-btn"
-                  disabled={isSubmittingFeedback}
-                >
-                  {isSubmittingFeedback ? 'Submitting...' : '💬 Submit Feedback'}
-                </button>
-              </div>
-            </form>
+            </div>
+            
+            <div className="modal-actions">
+              <button 
+                className="close-details-btn"
+                onClick={() => setShowSolutionDetailsModal(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Problem Responses Modal */}
-      {showResponsesModal && (
-        <div className="modal-overlay" onClick={() => setShowResponsesModal(false)}>
-          <div className="modal-content responses-modal" onClick={(e) => e.stopPropagation()}>
+      {/* Problem Solutions Modal (for problem creators) */}
+      {showProblemSolutionsModal && (
+        <div className="modal-overlay" onClick={() => setShowProblemSolutionsModal(false)}>
+          <div className="modal-content problem-solutions-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Problem Responses</h2>
+              <h2>Solutions Submitted</h2>
               <button 
                 className="close-btn"
-                onClick={() => setShowResponsesModal(false)}
+                onClick={() => setShowProblemSolutionsModal(false)}
               >
                 ×
               </button>
             </div>
             
-            <div className="responses-content">
-              {problemResponses.feedback && problemResponses.feedback.length > 0 ? (
-                <div className="feedback-responses">
-                  <h3>Feedback ({problemResponses.feedback.length})</h3>
-                  {problemResponses.feedback.map(response => (
-                    <div key={response.id} className="response-item">
-                      <div className="response-header">
+            <div className="solutions-content">
+              {problemSolutions.length > 0 ? (
+                <div className="solutions-list">
+                  {problemSolutions.map(solution => (
+                    <div key={solution.solution_id} className="solution-item">
+                      <div className="solution-header">
                         <div className="user-info">
                           <div className="user-avatar">
-                            {response.user_name.charAt(0).toUpperCase()}
+                            {solution.user_name.charAt(0).toUpperCase()}
                           </div>
                           <div className="user-details">
-                            <strong>{response.user_name}</strong>
-                            <div className="response-date">
-                              {formatDate(response.created_at)}
+                            <strong>{solution.user_name}</strong>
+                            <div className="solution-date">
+                              Solved: {formatDate(solution.created_at)}
                             </div>
                           </div>
                         </div>
-                        <div className="response-rating">
-                          {renderStarRating(response.rating)}
-                        </div>
                       </div>
                       
-                      {response.feedback && (
-                        <div className="response-feedback">
-                          <p>{response.feedback}</p>
+                      <div className="solution-content">
+                        <h5>Solution:</h5>
+                        <div className="solution-text">
+                          <pre>{solution.solution_text}</pre>
                         </div>
-                      )}
-                      
-                      <div className="response-meta">
-                        {response.is_helpful ? (
-                          <span className="helpful-badge">✓ Helpful</span>
-                        ) : (
-                          <span className="not-helpful-badge">Not Helpful</span>
-                        )}
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="empty-responses">
-                  <div className="empty-icon">💬</div>
-                  <h3>No responses yet</h3>
-                  <p>Be the first to provide feedback on this problem!</p>
+                <div className="empty-solutions">
+                  <div className="empty-icon">💡</div>
+                  <h3>No solutions yet</h3>
+                  <p>No one has solved this problem yet. Be patient!</p>
                 </div>
               )}
             </div>
@@ -693,14 +678,17 @@ const Problems = ({ user }) => {
       )}
 
       {((activeTab === 'community' && communityProblems.length === 0) || 
-        (activeTab === 'my' && myProblems.length === 0)) && !loading && (
+        (activeTab === 'my' && myProblems.length === 0) ||
+        (activeTab === 'solved' && solvedProblems.length === 0)) && !loading && (
         <div className="empty-state">
           <div className="empty-icon">📝</div>
           <h3>No problems yet</h3>
           <p>
             {activeTab === 'community' 
               ? "No community problems available at the moment."
-              : "Create your first problem to get started!"
+              : activeTab === 'my'
+              ? "Create your first problem to get started!"
+              : "You haven't solved any problems yet. Start solving!"
             }
           </p>
         </div>

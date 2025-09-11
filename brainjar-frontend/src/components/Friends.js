@@ -17,7 +17,6 @@ const Friends = ({ user }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [myFriends, setMyFriends] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
 
   // Show notification
   const showNotification = (message, type = 'success') => {
@@ -38,6 +37,40 @@ const Friends = ({ user }) => {
 
   // Search functionality
   useEffect(() => {
+    const searchUsers = async () => {
+      if (!searchTerm.trim()) return;
+      
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get(`http://localhost:8080/api/friends/search?q=${encodeURIComponent(searchTerm)}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSuggestions(response.data || []);
+      } catch (error) {
+        console.error('Error searching users:', error);
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchSuggestions = async () => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('http://localhost:8080/api/friends/suggestions', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setSuggestions(response.data || []);
+      } catch (error) {
+        console.error('Error fetching suggestions:', error);
+        setSuggestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (searchTerm.trim() && activeTab === 'suggestions') {
       const timeoutId = setTimeout(() => {
         searchUsers();
@@ -75,33 +108,6 @@ const Friends = ({ user }) => {
     }
   };
 
-  const fetchSuggestions = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8080/api/users/suggestions', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSuggestions(response.data.users || []);
-      setSearchResults([]);
-    } catch (err) {
-      console.error('Error fetching suggestions:', err);
-    }
-  };
-
-  const searchUsers = async () => {
-    if (!searchTerm.trim()) return;
-    
-    try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:8080/api/users/search?q=${searchTerm}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSearchResults(response.data.users || []);
-    } catch (err) {
-      console.error('Error searching users:', err);
-    }
-  };
-
   const sendFriendRequest = async (receiverId) => {
     try {
       const token = localStorage.getItem('token');
@@ -110,8 +116,10 @@ const Friends = ({ user }) => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      // Refresh suggestions to remove the user we sent request to
-      fetchSuggestions();
+      // Refresh suggestions - reload them after sending request
+      if (activeTab === 'suggestions') {
+        window.location.reload(); // Simple way to refresh suggestions
+      }
       showNotification('Friend request sent successfully!');
     } catch (err) {
       console.error('Error sending friend request:', err);
@@ -338,9 +346,9 @@ const Friends = ({ user }) => {
 
           <div className="friends-content">
             {searchTerm ? (
-              searchResults.length > 0 ? (
+              suggestions.length > 0 ? (
                 <div className="user-grid">
-                  {searchResults.map(user => renderUserCard(user))}
+                  {suggestions.map(user => renderUserCard(user))}
                 </div>
               ) : (
                 <div className="empty-state">

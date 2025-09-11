@@ -12,17 +12,17 @@ const getAuthHeaders = () => {
 };
 
 // Submit a solution to a problem
-export const solveProblem = async (problemId, payload) => {
+export const submitSolution = async (problemId, solutionText) => {
   try {
     const response = await axios.post(
-      `${API_BASE_URL}/problems/${problemId}/solve`,
-      payload,
+      `${API_BASE_URL}/problems/${problemId}/solution`,
+      { solution_text: solutionText },
       { headers: getAuthHeaders() }
     );
     return response.data;
   } catch (error) {
-    if (error.response?.status === 409) {
-      throw new Error('You have already solved this problem');
+    if (error.response?.status === 400 && error.response?.data?.error?.includes('already submitted')) {
+      throw new Error('You have already submitted a solution for this problem');
     }
     throw error;
   }
@@ -32,7 +32,7 @@ export const solveProblem = async (problemId, payload) => {
 export const getSolvedProblems = async () => {
   try {
     const response = await axios.get(
-      `${API_BASE_URL}/users/me/solved`,
+      `${API_BASE_URL}/problems/solved`,
       { headers: getAuthHeaders() }
     );
     return response.data;

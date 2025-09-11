@@ -17,15 +17,15 @@
 }
 
 .notification-success {
-  background: linear-gradient(135deg, #38a169, #68d391);
+  background: var(--gradient-secondary);
   color: white;
-  box-shadow: 0 4px 12px rgba(56, 161, 105, 0.3);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
 .notification-error {
-  background: linear-gradient(135deg, #e53e3e, #fc8181);
+  background: linear-gradient(135deg, #dc2626, #f87171);
   color: white;
-  box-shadow: 0 4px 12px rgba(229, 62, 62, 0.3);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 }
 
 @keyframes slideIn {
@@ -46,8 +46,9 @@
 .friends-title {
   font-size: 2.5rem;
   font-weight: 700;
-  color: #1a202c;
+  color: var(--text-primary);
   margin-bottom: 8px;
+  transition: var(--theme-transition);
 }
 
 .friends-subtitle {

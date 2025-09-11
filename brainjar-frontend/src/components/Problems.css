@@ -1,3 +1,21 @@
+/* Float delete button to right in header */
+.my-problem-card .delete-btn {
+  float: right;
+  margin-left: auto;
+  background: linear-gradient(135deg, #ff6a6a 0%, #ffb86c 100%);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.my-problem-card .delete-btn:hover {
+  background: linear-gradient(135deg, #ff4c4c 0%, #ffb86c 100%);
+  box-shadow: 0 4px 12px rgba(255, 106, 106, 0.2);
+}
 .problems-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -10,14 +28,14 @@
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e5e7eb;
-  border-top: 4px solid #667eea;
+  border: 4px solid var(--border-color);
+  border-top: 4px solid var(--primary-color);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 16px;
@@ -38,14 +56,16 @@
 .problems-title-section h1 {
   font-size: 36px;
   font-weight: 800;
-  color: #1a202c;
+  color: var(--text-primary);
   margin-bottom: 8px;
+  transition: var(--theme-transition);
 }
 
 .problems-subtitle {
   font-size: 18px;
-  color: #718096;
+  color: var(--text-secondary);
   margin: 0;
+  transition: var(--theme-transition);
 }
 
 .create-problem-btn {
@@ -284,7 +304,7 @@
 
 .action-btn {
   display: flex;
-  align-items: center;
+  align-items: left;
   gap: 8px;
   padding: 10px 16px;
   border: none;
@@ -883,6 +903,266 @@
   }
   
   .responses-content {
+    max-height: 400px;
+  }
+}
+
+/* Solved Problems Styles */
+.solved-problems {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 24px;
+}
+
+.solved-problem-card {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid #48bb78;
+  transition: all 0.2s ease;
+}
+
+.solved-problem-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+}
+
+.solved-badge {
+  background: linear-gradient(135deg, #48bb78, #68d391);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.solved-date {
+  color: #48bb78;
+  font-weight: 600;
+}
+
+.view-solution-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.view-solution-btn:hover {
+  background: linear-gradient(135deg, #5a67d8, #6b46c1);
+  transform: translateY(-1px);
+}
+
+.view-solutions-btn {
+  background: linear-gradient(135deg, #ed8936, #f6ad55);
+  color: white;
+}
+
+.view-solutions-btn:hover {
+  background: linear-gradient(135deg, #dd7724, #ed8936);
+  transform: translateY(-1px);
+}
+
+.solutions-badge {
+  background: linear-gradient(135deg, #ed8936, #f6ad55);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Solution Details Modal */
+.solution-details-modal {
+  max-width: 800px;
+  max-height: 90vh;
+}
+
+.solution-details {
+  padding: 20px 0;
+}
+
+.solution-meta {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border-left: 4px solid #48bb78;
+}
+
+.solution-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.solution-info span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.problem-description-section {
+  margin-bottom: 24px;
+}
+
+.problem-description-section h4 {
+  color: #2d3748;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.solution-section h4 {
+  color: #2d3748;
+  margin-bottom: 12px;
+  font-size: 18px;
+}
+
+.solution-text {
+  background: #1a202c;
+  color: #e2e8f0;
+  padding: 20px;
+  border-radius: 12px;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.close-details-btn {
+  background: #e2e8f0;
+  color: #4a5568;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.close-details-btn:hover {
+  background: #cbd5e0;
+  color: #2d3748;
+}
+
+/* Problem Solutions Modal */
+.problem-solutions-modal {
+  max-width: 900px;
+  max-height: 90vh;
+}
+
+.solutions-content {
+  max-height: 600px;
+  overflow-y: auto;
+}
+
+.solutions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.solution-item {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #667eea;
+}
+
+.solution-header {
+  margin-bottom: 16px;
+}
+
+.solution-date {
+  font-size: 12px;
+  color: #718096;
+}
+
+.solution-content h5 {
+  color: #2d3748;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.empty-solutions {
+  text-align: center;
+  padding: 60px 20px;
+  color: #718096;
+}
+
+.empty-solutions .empty-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+.empty-solutions h3 {
+  color: #4a5568;
+  margin-bottom: 8px;
+}
+
+/* Form Hint */
+.form-hint {
+  font-size: 12px;
+  color: #718096;
+  margin-top: 6px;
+  font-style: italic;
+}
+
+/* Enhanced solve button */
+.solve-btn {
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+  color: white;
+  font-weight: 600;
+}
+
+.solve-btn:hover {
+  background: linear-gradient(135deg, #3b9efe, #00e6fe);
+  transform: translateY(-1px);
+}
+
+.solve-submit-btn {
+  background: linear-gradient(135deg, #48bb78, #68d391);
+}
+
+.solve-submit-btn:hover {
+  background: linear-gradient(135deg, #38a169, #48bb78);
+}
+
+.solve-submit-btn:disabled {
+  background: #e2e8f0;
+  color: #a0aec0;
+  cursor: not-allowed;
+}
+
+/* Mobile responsiveness for new elements */
+@media (max-width: 768px) {
+  .solved-problems {
+    grid-template-columns: 1fr;
+  }
+  
+  .solution-details-modal,
+  .problem-solutions-modal {
+    max-width: 95vw;
+    margin: 10px;
+  }
+  
+  .solution-info {
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .solution-text {
+    font-size: 12px;
+    padding: 16px;
+  }
+  
+  .solutions-content {
     max-height: 400px;
   }
 }

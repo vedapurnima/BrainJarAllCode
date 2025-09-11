@@ -1,5 +1,6 @@
 use actix_web::{web, HttpResponse, Error};
 use crate::models::problem::{Problem, ProblemResponse, CreateProblem, UpdateProblemStatus};
+use crate::models::solution::{ProblemSolution, CreateSolution, SolvedProblemResponse};
 use crate::models::streak::Streak;
 use crate::middleware::AuthenticatedUser;
 use sqlx::PgPool;
@@ -16,6 +17,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .route("/{id}", web::put().to(update_problem))
             .route("/{id}", web::delete().to(delete_problem))
             .route("/{id}/solve", web::patch().to(mark_problem_solved))
+            .route("/{id}/solution", web::post().to(submit_solution))
             .route("/{id}/feedback", web::post().to(submit_problem_feedback))
             .route("/{id}/feedback", web::get().to(get_problem_feedback))
             .route("/{id}/responses", web::get().to(get_problem_responses))
@@ -68,6 +70,7 @@ async fn get_problems(
     pool: web::Data<PgPool>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, Error> {
+    // My Problems: only problems created by current user
     let problems = sqlx::query_as::<_, Problem>(
         "SELECT * FROM problems WHERE user_id = $1 ORDER BY created_at DESC"
     )
@@ -215,17 +218,111 @@ async fn get_solved_problems(
     pool: web::Data<PgPool>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, Error> {
-    let solved_problems = sqlx::query_as::<_, Problem>(
-        "SELECT * FROM problems 
-         WHERE user_id = $1 AND solved = true 
-         ORDER BY created_at DESC"
+    let solved_problems = sqlx::query!(
+        "SELECT 
+            p.id as problem_id,
+            p.title,
+            p.description,
+            p.category,
+            ps.id as solution_id,
+            ps.solution_text,
+            ps.created_at as solved_at,
+            p.user_id as problem_creator_id,
+            u.username as problem_creator_username,
+            u.avatar_url as problem_creator_avatar
+         FROM problem_solutions ps
+         JOIN problems p ON ps.problem_id = p.id
+         JOIN users u ON p.user_id = u.id
+         WHERE ps.user_id = $1
+         ORDER BY ps.created_at DESC",
+        user.id
     )
-    .bind(user.id)
     .fetch_all(&**pool)
     .await
     .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
 
-    Ok(HttpResponse::Ok().json(solved_problems))
+    let solved_problems_response: Vec<SolvedProblemResponse> = solved_problems
+        .into_iter()
+        .map(|row| SolvedProblemResponse {
+            problem_id: row.problem_id,
+            title: row.title,
+            description: row.description,
+            category: row.category,
+            solved_at: row.solved_at.unwrap_or_else(|| Utc::now()),
+            solution_id: row.solution_id,
+            solution_text: row.solution_text,
+            problem_creator_id: row.problem_creator_id,
+            problem_creator_username: row.problem_creator_username,
+            problem_creator_avatar: row.problem_creator_avatar,
+        })
+        .collect();
+
+    Ok(HttpResponse::Ok().json(solved_problems_response))
+}
+
+async fn submit_solution(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    user: AuthenticatedUser,
+    payload: web::Json<CreateSolution>,
+) -> Result<HttpResponse, Error> {
+    let problem_id = path.into_inner();
+
+    // Check if problem exists and user hasn't already submitted a solution
+    let problem_exists = sqlx::query!(
+        "SELECT id FROM problems WHERE id = $1",
+        problem_id
+    )
+    .fetch_optional(&**pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+    if problem_exists.is_none() {
+        return Ok(HttpResponse::NotFound().json(serde_json::json!({
+            "error": "Problem not found"
+        })));
+    }
+
+    // Check if user already submitted a solution for this problem
+    let existing_solution = sqlx::query!(
+        "SELECT id FROM problem_solutions WHERE problem_id = $1 AND user_id = $2",
+        problem_id,
+        user.id
+    )
+    .fetch_optional(&**pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+    if existing_solution.is_some() {
+        return Ok(HttpResponse::BadRequest().json(serde_json::json!({
+            "error": "You have already submitted a solution for this problem"
+        })));
+    }
+
+    // Insert the solution
+    let solution = sqlx::query_as::<_, ProblemSolution>(
+        "INSERT INTO problem_solutions (id, problem_id, user_id, solution_text, metadata)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *"
+    )
+    .bind(Uuid::new_v4())
+    .bind(problem_id)
+    .bind(user.id)
+    .bind(&payload.solution_text)
+    .bind(&payload.metadata)
+    .fetch_one(&**pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+    // Update streak for solving a problem
+    let _streak = Streak::update_for_problem_solve(&**pool, user.id)
+        .await
+        .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "message": "Solution submitted successfully",
+        "solution": solution
+    })))
 }
 
 async fn get_problem_stats(
@@ -270,6 +367,7 @@ async fn get_community_problems(
     pool: web::Data<PgPool>,
     user: AuthenticatedUser,
 ) -> Result<HttpResponse, Error> {
+    // Community Problems: only problems NOT created by current user
     let problems = sqlx::query!(
         "SELECT p.id, p.title, p.description, p.category, p.user_id, p.created_at, p.solved, u.username as created_by 
          FROM problems p

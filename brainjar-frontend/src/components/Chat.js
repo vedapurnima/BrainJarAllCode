@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
-import { useTheme } from '../context/ThemeContext';
 import './Chat.css';
 
 const Chat = ({ user }) => {
   const location = useLocation();
-  const { theme } = useTheme();
   const [friends, setFriends] = useState([]);
   const [selectedFriend, setSelectedFriend] = useState(location.state?.selectedFriend || null);
   const [messages, setMessages] = useState([]);
