@@ -50,8 +50,6 @@ pub struct FriendWithDetails {
     pub friend_username: String,
     pub friend_email: Option<String>,
     pub friend_avatar_url: Option<String>,
-    pub character_avatar: Option<String>,
-    pub character_bio: Option<String>,
     pub problems_solved: i32,
     pub current_streak: i32,
     pub created_at: DateTime<Utc>,

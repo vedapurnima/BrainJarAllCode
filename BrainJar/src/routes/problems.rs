@@ -21,6 +21,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .route("/{id}/feedback", web::post().to(submit_problem_feedback))
             .route("/{id}/feedback", web::get().to(get_problem_feedback))
             .route("/{id}/responses", web::get().to(get_problem_responses))
+            .route("/{id}/solutions", web::get().to(get_problem_solutions))
             .route("/solved", web::get().to(get_solved_problems))
             .route("/categories", web::get().to(get_problem_categories))
             .route("/stats", web::get().to(get_problem_stats))
@@ -563,6 +564,57 @@ async fn get_problem_responses(
     });
 
     Ok(HttpResponse::Ok().json(responses))
+}
+
+// Get solutions for a specific problem (for problem creators)
+async fn get_problem_solutions(
+    pool: web::Data<PgPool>,
+    path: web::Path<Uuid>,
+    user: AuthenticatedUser,
+) -> Result<HttpResponse, Error> {
+    let problem_id = path.into_inner();
+
+    // Check if the user is the owner of the problem
+    let problem_owner = sqlx::query!(
+        "SELECT user_id FROM problems WHERE id = $1",
+        problem_id
+    )
+    .fetch_optional(&**pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?
+    .ok_or_else(|| actix_web::error::ErrorNotFound("Problem not found"))?;
+
+    if problem_owner.user_id != user.id {
+        return Err(actix_web::error::ErrorForbidden("Not authorized to view solutions for this problem"));
+    }
+
+    // Get all solutions for this problem
+    let solutions = sqlx::query!(
+        "SELECT ps.*, u.username as user_name, u.avatar_url
+         FROM problem_solutions ps
+         JOIN users u ON ps.user_id = u.id
+         WHERE ps.problem_id = $1
+         ORDER BY ps.created_at DESC",
+        problem_id
+    )
+    .fetch_all(&**pool)
+    .await
+    .map_err(|e| actix_web::error::ErrorInternalServerError(e.to_string()))?;
+
+    let solutions_json: Vec<serde_json::Value> = solutions
+        .into_iter()
+        .map(|row| serde_json::json!({
+            "solution_id": row.id,
+            "user_id": row.user_id,
+            "user_name": row.user_name,
+            "user_avatar": row.avatar_url,
+            "solution_text": row.solution_text,
+            "created_at": row.created_at,
+            "metadata": row.metadata
+        }))
+        .collect();
+
+    Ok(HttpResponse::Ok().json(solutions_json))
 }
 
 #[derive(serde::Deserialize)]

@@ -26,23 +26,25 @@ pub async fn send_message(
     }
 
     // Check if receiver exists
-    let receiver_exists = sqlx::query_scalar!(
+    let receiver_exists = match sqlx::query_scalar!(
         "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
         message_data.receiver_id
     )
     .fetch_one(pool.get_ref())
-    .await
-    .map_err(|e| {
-        eprintln!("Database error checking receiver: {}", e);
-        HttpResponse::InternalServerError().json(json!({"error": "Database error"}))
-    })?;
+    .await {
+        Ok(exists) => exists.unwrap_or(false),
+        Err(e) => {
+            eprintln!("Database error checking receiver: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(json!({"error": "Database error"})));
+        }
+    };
 
-    if !receiver_exists.unwrap_or(false) {
+    if !receiver_exists {
         return Ok(HttpResponse::NotFound().json(json!({"error": "User not found"})));
     }
 
     // Check if users are friends (both directions)
-    let are_friends = sqlx::query_scalar!(
+    let are_friends = match sqlx::query_scalar!(
         "SELECT EXISTS(
             SELECT 1 FROM friends 
             WHERE (user_id = $1 AND friend_id = $2) 
@@ -52,13 +54,15 @@ pub async fn send_message(
         message_data.receiver_id
     )
     .fetch_one(pool.get_ref())
-    .await
-    .map_err(|e| {
-        eprintln!("Database error checking friendship: {}", e);
-        HttpResponse::InternalServerError().json(json!({"error": "Database error"}))
-    })?;
+    .await {
+        Ok(exists) => exists.unwrap_or(false),
+        Err(e) => {
+            eprintln!("Database error checking friendship: {}", e);
+            return Ok(HttpResponse::InternalServerError().json(json!({"error": "Database error"})));
+        }
+    };
 
-    if !are_friends.unwrap_or(false) {
+    if !are_friends {
         return Ok(HttpResponse::Forbidden().json(json!({
             "error": "You can only message friends"
         })));

@@ -1166,3 +1166,134 @@
     max-height: 400px;
   }
 }
+
+/* Solved Problems Specific Styles */
+.solved-card {
+  border-left: 4px solid #48bb78;
+  background: linear-gradient(135deg, rgba(72, 187, 120, 0.05), rgba(255, 255, 255, 0.8));
+}
+
+.solved-card:hover {
+  border-left-color: #38a169;
+  background: linear-gradient(135deg, rgba(72, 187, 120, 0.08), rgba(255, 255, 255, 0.9));
+}
+
+.solved-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.problem-rating {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rating-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 2px;
+}
+
+.rating-stars .star {
+  font-size: 16px;
+  color: #ddd;
+  cursor: default;
+}
+
+.rating-stars .star.filled {
+  color: #ffd700;
+}
+
+.solution-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-label {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.time-value {
+  font-size: 12px;
+  color: #4a5568;
+  background: rgba(72, 187, 120, 0.1);
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.solved-stats {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.solved-count {
+  background: linear-gradient(135deg, #48bb78, #68d391);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.view-solution-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.view-solution-btn:hover {
+  background: linear-gradient(135deg, #5a67d8, #6b46c1);
+  transform: translateY(-1px);
+}
+
+/* Edit and Delete buttons for My Problems */
+.edit-btn {
+  background: linear-gradient(135deg, #4299e1, #63b3ed);
+  color: white;
+}
+
+.edit-btn:hover {
+  background: linear-gradient(135deg, #3182ce, #4299e1);
+  transform: translateY(-1px);
+}
+
+.delete-btn {
+  background: linear-gradient(135deg, #e53e3e, #fc8181);
+  color: white;
+}
+
+.delete-btn:hover {
+  background: linear-gradient(135deg, #c53030, #e53e3e);
+  transform: translateY(-1px);
+}
+
+/* Create button styling */
+.create-btn {
+  background: linear-gradient(135deg, #48bb78, #68d391);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+.create-btn:hover {
+  background: linear-gradient(135deg, #38a169, #48bb78);
+  transform: translateY(-1px);
+}

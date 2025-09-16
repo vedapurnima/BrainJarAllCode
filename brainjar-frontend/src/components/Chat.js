@@ -39,7 +39,7 @@ const Chat = ({ user }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8080/api/friends', {
+      const response = await axios.get('http://localhost:7000/api/friends', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setFriends(response.data.friends || []);

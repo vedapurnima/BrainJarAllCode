@@ -258,14 +258,11 @@ pub async fn get_friends(
             u.username as friend_username,
             u.email as friend_email,
             u.avatar_url as friend_avatar_url,
-            c.avatar_url as character_avatar,
-            c.bio as character_bio,
             COALESCE(s.problems_solved, 0) as problems_solved,
             COALESCE(s.current_streak, 0) as current_streak,
             f.created_at
         FROM friends f
         JOIN users u ON f.friend_id = u.id
-        LEFT JOIN characters c ON u.id = c.user_id
         LEFT JOIN streaks s ON u.id = s.user_id
         WHERE f.user_id = $1
         ORDER BY f.created_at DESC
@@ -302,12 +299,9 @@ pub async fn get_friend_suggestions(
             u.username,
             u.email,
             u.avatar_url,
-            c.avatar_url as character_avatar,
-            c.bio as character_bio,
             COALESCE(s.problems_solved, 0) as problems_solved,
             COALESCE(s.current_streak, 0) as current_streak
         FROM users u
-        LEFT JOIN characters c ON u.id = c.user_id
         LEFT JOIN streaks s ON u.id = s.user_id
         WHERE u.id != $1
         AND u.id NOT IN (
@@ -338,8 +332,6 @@ pub async fn get_friend_suggestions(
         "username": user.username,
         "email": user.email,
         "avatar_url": user.avatar_url,
-        "character_avatar": user.character_avatar,
-        "character_bio": user.character_bio,
         "problems_solved": user.problems_solved,
         "current_streak": user.current_streak
     })).collect();
@@ -379,12 +371,9 @@ pub async fn search_users(
             u.username,
             u.email,
             u.avatar_url,
-            c.avatar_url as character_avatar,
-            c.bio as character_bio,
             COALESCE(s.problems_solved, 0) as problems_solved,
             COALESCE(s.current_streak, 0) as current_streak
         FROM users u
-        LEFT JOIN characters c ON u.id = c.user_id
         LEFT JOIN streaks s ON u.id = s.user_id
         WHERE u.id != $1 
         AND LOWER(u.username) LIKE $2
@@ -406,8 +395,6 @@ pub async fn search_users(
         "username": user.username,
         "email": user.email,
         "avatar_url": user.avatar_url,
-        "character_avatar": user.character_avatar,
-        "character_bio": user.character_bio,
         "problems_solved": user.problems_solved,
         "current_streak": user.current_streak
     })).collect();

@@ -3,7 +3,7 @@ mod routes;
 mod models;
 mod middleware;
 
-use actix_web::{web, App, HttpServer, middleware::Logger};
+use actix_web::{web, App, HttpServer, middleware::Logger, http};
 use actix_cors::Cors;
 use dotenv::dotenv;
 
@@ -35,14 +35,36 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
-    println!("Server running on http://localhost:8080");
+    println!("Server running on http://localhost:7000");
 
     HttpServer::new(move || {
-        let cors = Cors::default()
-            .allow_any_origin()
-            .allow_any_method()
-            .allow_any_header()
-            .max_age(3600);
+        // Read environment
+        let env = std::env::var("RUST_ENV").unwrap_or_else(|_| "development".into());
+
+        // Configure CORS
+        let cors = if env == "production" {
+            // Allowed origins from ENV (comma-separated)
+            let allowed_origins = std::env::var("ALLOWED_ORIGINS")
+                .unwrap_or_else(|_| "https://yourdomain.com".into());
+
+            let mut cors = Cors::default()
+                .allowed_methods(vec!["GET", "POST", "PUT", "DELETE"])
+                .allowed_headers(vec![
+                    http::header::AUTHORIZATION,
+                    http::header::ACCEPT,
+                    http::header::CONTENT_TYPE,
+                ])
+                .supports_credentials()
+                .max_age(3600);
+
+            for origin in allowed_origins.split(',') {
+                cors = cors.allowed_origin(origin.trim());
+            }
+            cors
+        } else {
+            // Development: allow all
+            Cors::permissive()
+        };
 
         App::new()
             .wrap(cors)
@@ -54,7 +76,7 @@ async fn main() -> std::io::Result<()> {
                 routes::configure(cfg);
             })
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind(("0.0.0.0", 7000))?
     .run()
     .await
 }

@@ -48,8 +48,7 @@ async fn send_message(
     // Check if users are friends (optional - you might want to allow messaging to any user)
     let are_friends = sqlx::query!(
         "SELECT id FROM friends 
-         WHERE ((user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1))
-         AND status = 'accepted'",
+         WHERE (user_id = $1 AND friend_id = $2) OR (user_id = $2 AND friend_id = $1)",
         user.id,
         payload.receiver_id
     )
@@ -141,7 +140,7 @@ async fn mark_messages_as_read(
     // Mark messages as read only if the current user is the receiver
     let updated = sqlx::query!(
         "UPDATE messages 
-         SET is_read = true, updated_at = NOW()
+         SET is_read = true
          WHERE id = ANY($1) AND receiver_id = $2",
         &payload.message_ids,
         user.id

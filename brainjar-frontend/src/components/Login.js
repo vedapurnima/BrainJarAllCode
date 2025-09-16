@@ -24,7 +24,7 @@ const Login = ({ onLogin }) => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:8080/api/auth/login', {
+      const response = await axios.post('http://localhost:7000/api/auth/login', {
         email: formData.email,
         password: formData.password
       });

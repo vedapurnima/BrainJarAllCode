@@ -43,7 +43,7 @@ const Dashboard = ({ user }) => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // Fetch real problems data to calculate stats
-        const problemsResponse = await axios.get('http://localhost:8080/api/problems', { headers });
+        const problemsResponse = await axios.get('http://localhost:7000/api/problems', { headers });
         const problems = problemsResponse.data || [];
         
         // Calculate real stats from problems data
@@ -53,7 +53,7 @@ const Dashboard = ({ user }) => {
         // Try to fetch user streak data (if endpoint exists)
         let currentStreak = 7; // Default fallback
         try {
-          const streakResponse = await axios.get('http://localhost:8080/api/streaks', { headers });
+          const streakResponse = await axios.get('http://localhost:7000/api/streaks', { headers });
           if (streakResponse.data && streakResponse.data.length > 0) {
             currentStreak = streakResponse.data[0].current_streak || 7;
           }

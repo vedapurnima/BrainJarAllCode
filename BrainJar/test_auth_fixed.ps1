@@ -21,7 +21,7 @@ $signupData = @{
 } | ConvertTo-Json
 
 try {
-    $signupResult = Invoke-RestMethod -Uri "http://localhost:8080/auth/signup" -Method POST -ContentType "application/json" -Body $signupData -TimeoutSec 10
+    $signupResult = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/register" -Method POST -ContentType "application/json" -Body $signupData -TimeoutSec 10
     Write-Host "✅ Signup Successful!" -ForegroundColor Green
     Write-Host "   User ID: $($signupResult.id)"
     Write-Host "   Username: $($signupResult.username)"
@@ -40,7 +40,7 @@ $loginData = @{
 } | ConvertTo-Json
 
 try {
-    $loginResult = Invoke-RestMethod -Uri "http://localhost:8080/auth/login" -Method POST -ContentType "application/json" -Body $loginData -TimeoutSec 10
+    $loginResult = Invoke-RestMethod -Uri "http://localhost:8080/api/auth/login" -Method POST -ContentType "application/json" -Body $loginData -TimeoutSec 10
     Write-Host "✅ Login Successful!" -ForegroundColor Green
     Write-Host "   User ID: $($loginResult.user.id)"
     Write-Host "   Username: $($loginResult.user.username)"

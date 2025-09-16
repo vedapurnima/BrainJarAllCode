@@ -43,7 +43,7 @@ const Friends = ({ user }) => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:8080/api/friends/search?q=${encodeURIComponent(searchTerm)}`, {
+        const response = await axios.get(`http://localhost:7000/api/friends/search?q=${encodeURIComponent(searchTerm)}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSuggestions(response.data || []);
@@ -59,7 +59,7 @@ const Friends = ({ user }) => {
       setLoading(true);
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8080/api/friends/suggestions', {
+        const response = await axios.get('http://localhost:7000/api/friends/suggestions', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setSuggestions(response.data || []);
@@ -92,9 +92,9 @@ const Friends = ({ user }) => {
 
       // Fetch all data simultaneously
       const [suggestionsRes, pendingRes, friendsRes] = await Promise.all([
-        axios.get('http://localhost:8080/api/users/suggestions', config),
-        axios.get('http://localhost:8080/api/friend-request/pending', config),
-        axios.get('http://localhost:8080/api/friends', config)
+        axios.get('http://localhost:7000/api/users/suggestions', config),
+        axios.get('http://localhost:7000/api/friend-request/pending', config),
+        axios.get('http://localhost:7000/api/friends', config)
       ]);
 
       setSuggestions(suggestionsRes.data.users || []);
@@ -111,7 +111,7 @@ const Friends = ({ user }) => {
   const sendFriendRequest = async (receiverId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post('http://localhost:8080/api/friend-request/send', 
+      await axios.post('http://localhost:7000/api/friend-request/send', 
         { receiver_id: receiverId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -135,7 +135,7 @@ const Friends = ({ user }) => {
     try {
       const token = localStorage.getItem('token');
       
-      await axios.post(`http://localhost:8080/api/friend-request/${action}/${requestId}`, {}, {
+      await axios.post(`http://localhost:7000/api/friend-request/${action}/${requestId}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
